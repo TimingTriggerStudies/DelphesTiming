@@ -150,8 +150,8 @@ void ParticlePropagator::Process()
     // check that particle position is inside the cylinder
     if(TMath::Hypot(x, y) > fRadius || TMath::Abs(z) > fHalfLengthMax)
     {
-      cout << "Warning: particle produced outside the detector and will not be firther taken into account" << endl;
-      std::cout << "R:"  << TMath::Hypot(x, y) << " z: " << TMath::Abs(z) << " " << fHalfLength <<  std::endl;
+      //cout << "Warning: particle produced outside the detector and will not be firther taken into account" << endl;
+      //std::cout << "R:"  << TMath::Hypot(x, y) << " z: " << TMath::Abs(z) << " " << fHalfLength <<  std::endl;
       continue;
     }
 
