@@ -62,6 +62,8 @@ private:
 
   TObjArray *fOutputArray; //!
 
+  Int_t fVerbose;
+
   ClassDef(JetTimingModule, 1)
 };
 

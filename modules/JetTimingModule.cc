@@ -70,6 +70,7 @@ JetTimingModule::~JetTimingModule()
 void JetTimingModule::Init()
 {
   // read parameters
+  fVerbose = GetInt("Verbose", 0);
 
   // import input array(s)
 
@@ -107,14 +108,18 @@ void JetTimingModule::Process()
   double PV_X = -999;
   double PV_Y = -999;
   double PV_Z = -999;
+  double PV_T = -999;
   while((vertex = static_cast<Candidate*>(fItVertexArray->Next()))) {
     if (vertex->SumPT2 > tmpSumPt2) {
       tmpSumPt2 = vertex->SumPT2;
       PV_X = vertex->Position.X();
       PV_Y = vertex->Position.Y();
       PV_Z = vertex->Position.Z();
+      PV_T = vertex->Position.T();
     }
   }
+
+  if (fVerbose) cout << "Vertex Time : " << PV_X << " " << PV_Y << " " << PV_Z << " " << PV_T << "\n";
 
   Candidate *candidate;
   TLorentzVector candidatePosition, candidateMomentum;
@@ -134,66 +139,81 @@ void JetTimingModule::Process()
 
     TIter itConstituents(candidate->GetCandidates());
 
-    // cout << "Jet : " << candidateMomentum.Pt() << " " << candidateMomentum.Eta() << " : " << candidateMomentum.Phi() << "\n";
+    if (fVerbose) cout << "Jet : " << candidateMomentum.Pt() << " " << candidateMomentum.Eta() << " : " << candidateMomentum.Phi() << "\n";
     while((constituent = static_cast<Candidate*>(itConstituents.Next()))) {
 
       if (! ( constituent->PID == 22 || 
 	      (abs(constituent->Charge) == 1 && constituent->Momentum.Pt() > 2.0)
 	      )) continue;
       
-      // cout << "Consituent : " << constituent->PID << " " 
-      // 	   << constituent->Momentum.Pt() << " " 
-      // 	   << constituent->Momentum.Eta() << " "
-      // 	   << constituent->Momentum.Phi() << " " 
-      	   // << " | " 
-      	   // << constituent->L << " | "
-	// ;
+      if (fVerbose) {
+	cout << "Consituent : " << constituent->PID << " " 
+	     << constituent->Momentum.Pt() << " " 
+	     << constituent->Momentum.Eta() << " "
+	     << constituent->Momentum.Phi() << " " 
+	     << " | " 
+	     << constituent->L << " | "
+	  ;
+      }
       
       double ConstituentTime = (constituent->Position.T()*1.0e-3/c_light) * s_To_ns;
       double StraightLineDistance = mm_To_m * sqrt(pow(PV_X - constituent->Position.X(),2) + pow(PV_Y - constituent->Position.Y(),2) + pow(PV_Z - constituent->Position.Z(),2) );
       double StraightLineTOF =  (StraightLineDistance / c_light)* s_To_ns;
       double TOFCorrectedTime = ConstituentTime - StraightLineTOF;
-      if (constituent->PID != 22) TOFCorrectedTime = ConstituentTime - (constituent->L*1.0e-3/c_light)*1.0e9;
+      double TOFAndVertexCorrectedTime = ConstituentTime - StraightLineTOF - s_To_ns*PV_T*1.0e-3 / c_light;
+      if (constituent->PID != 22) {
+	TOFCorrectedTime = ConstituentTime - (constituent->L*1.0e-3/c_light)*s_To_ns;
+	TOFAndVertexCorrectedTime = ConstituentTime - (constituent->L*1.0e-3/c_light)*s_To_ns - s_To_ns*PV_T*1.0e-3 / c_light;
+      }
 
-      // cout << ConstituentTime  << " ---> "
-      // 	   << TOFCorrectedTime << " "
-      // 	   << " | "
-      // 	   << "\n"
-      	   // << constituent->Position.X() << " " << constituent->Position.Y() << " " << constituent->Position.Z() << " " 
-      	   // << " --> " << PV_X << " " << PV_Y << " " << PV_Z << " | " 
-      	   // << StraightLineDistance << " " << StraightLineTOF << " "
-      	   // << " --> " << TOFCorrectedTime << " "
-      	   // << "\n"
-      //;   
+      if (fVerbose) {
+	cout << ConstituentTime  << " ---> "
+	     << TOFCorrectedTime << " "
+	     << TOFAndVertexCorrectedTime << " "
+	  //<< s_To_ns*PV_T*1.0e-3 / c_light << " " 
+	     << " | "
+	     << "\n"
+	     << constituent->Position.X() << " " << constituent->Position.Y() << " " << constituent->Position.Z() << " " 
+	     << " --> " << PV_X << " " << PV_Y << " " << PV_Z << " | " 
+	     << StraightLineDistance << " " << StraightLineTOF << " "
+	     << " --> " << TOFCorrectedTime << " "
+	     << "\n"
+	  ;   
+      }
 
-   
-      // cout << "constituent initial position : " << constituent->InitialPosition.X() << " "
-      // 	   << constituent->InitialPosition.Y() << " "
-      // 	   << constituent->InitialPosition.Z() << " "
-      // 	   << constituent->InitialPosition.T() << " "
-      // 	   << "\n";
-      // cout << "constituent final position : " << constituent->Position.X() << " "
-      // 	   << constituent->Position.Y() << " "
-      // 	   << constituent->Position.Z() << " "
-      // 	   << constituent->Position.T() << " "
-      // 	   << "\n";
+      double MyTimestamp = TOFAndVertexCorrectedTime;
+
+      if (fVerbose) {
+	cout << "constituent initial position : " << constituent->InitialPosition.X() << " "
+	     << constituent->InitialPosition.Y() << " "
+	     << constituent->InitialPosition.Z() << " "
+	     << constituent->InitialPosition.T() << " "
+	     << "\n";
+	cout << "constituent final position : " << constituent->Position.X() << " "
+	     << constituent->Position.Y() << " "
+	     << constituent->Position.Z() << " "
+	     << constituent->Position.T() << " "
+	     << "\n";
+      }
 
       if (constituent->PID == 22) {
-	EnergyWeightedPhotonTime += constituent->Momentum.E() * TOFCorrectedTime;
+	EnergyWeightedPhotonTime += constituent->Momentum.E() * MyTimestamp;
 	PhotonTimeEnergySum += constituent->Momentum.E();
       }
 
       if (abs(constituent->Charge) == 1 && constituent->Momentum.Pt() > 2.0) {
-	ChargedParticleTimeSum += TOFCorrectedTime;
+	ChargedParticleTimeSum += MyTimestamp;
 	ChargedParticleCount += 1.0;
       }     
     }
     double PhotonTime = EnergyWeightedPhotonTime / PhotonTimeEnergySum;
     double ChargedParticleTime = ChargedParticleTimeSum / ChargedParticleCount;
 
-    // cout << "PhotonTime = " << PhotonTime << "\n";
-    // cout << "ChargedParticleTime = " << ChargedParticleTime << "\n";
-    // cout << "\n\n";
+    if (fVerbose) {
+      cout << "PhotonTime = " << PhotonTime << "\n";
+      cout << "ChargedParticleTime = " << ChargedParticleTime << "\n";
+      cout << "\n\n";
+    }
 
     ((Jet*)candidate)->PhotonTime = PhotonTime;
     ((Jet*)candidate)->ChargedParticleTime = ChargedParticleTime;

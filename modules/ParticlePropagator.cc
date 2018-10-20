@@ -141,16 +141,18 @@ void ParticlePropagator::Process()
   Candidate *candidate;
   while((candidate = static_cast<Candidate*>(fItInputArray->Next())))
   {
-    // cout << "\n\n";
-    // cout << "Particle: " << candidate->PID << " " 
-    // 	 << candidate->Momentum.Pt() << " " 
-    // 	 << candidate->Momentum.Eta() << " "
-    // 	 << candidate->Momentum.Phi() << " " 
-    // 	 << " | " 
-    // 	 << candidate->Position.X() << " "
-    // 	 << candidate->Position.Y() << " "
-    // 	 << candidate->Position.Z() << " "
-    // 	 << "\n" ;
+    if(fVerbose) {
+      cout << "\n\n";
+      cout << "Particle: " << candidate->PID << " " 
+	   << candidate->Momentum.Pt() << " " 
+	   << candidate->Momentum.Eta() << " "
+	   << candidate->Momentum.Phi() << " " 
+	   << " | " 
+	   << candidate->Position.X() << " "
+	   << candidate->Position.Y() << " "
+	   << candidate->Position.Z() << " "
+	   << "\n" ;      
+    }
 
     TLorentzVector candidatePosition = candidate->Position;
     TLorentzVector candidateMomentum = candidate->Momentum;
@@ -178,8 +180,12 @@ void ParticlePropagator::Process()
     {
       continue;
     }
-    // cout << "px,py,pz = " << px << " " << py << " " << pz << "\n";
-    // cout << "x,y,z = " << x << " " << y << " " << z << "\n";
+
+    if(fVerbose) {
+      cout << "px,py,pz = " << px << " " << py << " " << pz << "\n";
+      cout << "x,y,z = " << x << " " << y << " " << z << "\n";
+    } 
+
     if(TMath::Abs(q) < 1.0E-9 || TMath::Abs(fBz) < 1.0E-9)
     {
       // solve vt2*t^2 + 2*(vx*x + vy*y)*t - (fRadius2 - x*x - y*y) = 0
@@ -195,42 +201,26 @@ void ParticlePropagator::Process()
       Double_t t_R = ((sqrt(discr) - rdp) / pt) / (c_light * (pt / e) );
       Double_t t_z = (TMath::Sign(fHalfLengthMax, pz) - z) / ( c_light * (pz/e));
 
-      // cout << "tR = " << "( " << sqrt(discr) << " - " << rdp << " ) / ( " << c_light << " * ( " << pt << " / " << e << " ) )\n";
-      // cout << "tz = " << e << " * (" << TMath::Sign(fHalfLengthMax, pz) << " - " << z << ") / ( " << c_light << " * " << pz << ")\n";
+      if(fVerbose) {
+	cout << "tR = " << "( " << sqrt(discr) << " - " << rdp << " ) / ( " << c_light << " * ( " << pt << " / " << e << " ) )\n";
+	cout << "tz = " << e << " * (" << TMath::Sign(fHalfLengthMax, pz) << " - " << z << ") / ( " << c_light << " * " << pz << ")\n";
+      }
 
       Double_t t = TMath::Min(t_R, t_z);
-      // cout << "rxp,rdp,disc = " << rxp << " " << rdp << " " << discr << "\n";
-      // cout << "t_R,t_z,t = " << t_R*1e9 << " " << t_z*1e9 << " " << t*1e9 << "\n ";
-
-      // Double_t tmp = px*y - py*x;
-      // Double_t discr2 = pt2*fRadius*fRadius - tmp*tmp;
-      //
-      // if(discr2 < 0.0)
-      // {
-      //   // no solutions
-      //   continue;
-      // }
-      //
-      // tmp = px*x + py*y;
-      // Double_t t1 = (-tmp + TMath::Sqrt(discr2))/pt2;
-      // Double_t t2 = (-tmp - TMath::Sqrt(discr2))/pt2;
-      // Double_t t = (t1 < 0.0) ? t2 : t1;
-      //
-      // Double_t z_t = z + pz*t;
-      // if(TMath::Abs(z_t) > fHalfLength)
-      // {
-      //   Double_t t3 = (+fHalfLength - z) / pz;
-      //   Double_t t4 = (-fHalfLength - z) / pz;
-      //   t = (t3 < 0.0) ? t4 : t3;
-      // }
-
+      if(fVerbose) {
+	cout << "rxp,rdp,disc = " << rxp << " " << rdp << " " << discr << "\n";
+	cout << "t_R,t_z,t = " << t_R*1e9 << " " << t_z*1e9 << " " << t*1e9 << "\n ";
+      }
+    
       Double_t x_t = x + px*t*c_light/e;
       Double_t y_t = y + py*t*c_light/e;
       Double_t z_t = z + pz*t*c_light/e;
 
       Double_t l = TMath::Sqrt( (x_t - x)*(x_t - x) + (y_t - y)*(y_t - y) + (z_t - z)*(z_t - z));
-      //cout << px << " " << py << " " << pz << " " << sqrt(px*px+py*py+pz*pz) << " " << e << "\n";
-      // cout << "x_t,y_t,z_t,l = " << x_t << " " << y_t << " " << z_t << " " << l << "\n";
+      if(fVerbose) {
+	cout << px << " " << py << " " << pz << " " << sqrt(px*px+py*py+pz*pz) << " " << e << "\n";
+	cout << "x_t,y_t,z_t,l = " << x_t << " " << y_t << " " << z_t << " " << l << "\n";
+      }
 
       Candidate* mother = candidate;
       candidate = static_cast<Candidate*>(candidate->Clone());
@@ -239,16 +229,18 @@ void ParticlePropagator::Process()
       candidate->Position.SetXYZT(x_t*1.0E3, y_t*1.0E3, z_t*1.0E3, candidatePosition.T() + t*c_light*1.0E3);
       candidate->L = l*1.0E3;
 
-      // cout << "candidate initial position : " << candidate->InitialPosition.X() << " "
-      // 	   << candidate->InitialPosition.Y() << " "
-      // 	   << candidate->InitialPosition.Z() << " "
-      // 	   << candidate->InitialPosition.T() << " "
-      // 	   << "\n";
-      // cout << "candidate final position : " << candidate->Position.X() << " "
-      // 	   << candidate->Position.Y() << " "
-      // 	   << candidate->Position.Z() << " "
-      // 	   << candidate->Position.T() << " "
-      // 	   << "\n";
+      if(fVerbose) {
+	cout << "candidate initial position : " << candidate->InitialPosition.X() << " "
+	     << candidate->InitialPosition.Y() << " "
+	     << candidate->InitialPosition.Z() << " "
+	     << candidate->InitialPosition.T() << " "
+	     << "\n";
+	cout << "candidate final position : " << candidate->Position.X() << " "
+	     << candidate->Position.Y() << " "
+	     << candidate->Position.Z() << " "
+	     << candidate->Position.T() << " "
+	     << "\n";
+      }
 
       candidate->Momentum = candidateMomentum;
       candidate->AddCandidate(mother);
@@ -386,18 +378,19 @@ void ParticlePropagator::Process()
       candidate->Td = candidatePosition.T() + td*c_light*1.0E3;
 
 
-      // cout << "candidate initial position : " << candidate->InitialPosition.X() << " "
-      // 	   << candidate->InitialPosition.Y() << " "
-      // 	   << candidate->InitialPosition.Z() << " "
-      // 	   << candidate->InitialPosition.T() << " "
-      // 	   << "\n";
-      // cout << "candidate final position : " << candidate->Position.X() << " "
-      // 	   << candidate->Position.Y() << " "
-      // 	   << candidate->Position.Z() << " "
-      // 	   << candidate->Position.T() << " "
-      // 	   << "\n";
-
-
+      if(fVerbose) {
+	cout << "candidate initial position : " << candidate->InitialPosition.X() << " "
+	     << candidate->InitialPosition.Y() << " "
+	     << candidate->InitialPosition.Z() << " "
+	     << candidate->InitialPosition.T() << " "
+	     << "\n";
+	cout << "candidate final position : " << candidate->Position.X() << " "
+	     << candidate->Position.Y() << " "
+	     << candidate->Position.Z() << " "
+	     << candidate->Position.T() << " "
+	     << "\n";
+      }
+      
       fOutputArray->Add(candidate);
       switch(TMath::Abs(candidate->PID))
       {
