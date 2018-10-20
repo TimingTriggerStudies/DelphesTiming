@@ -45,9 +45,34 @@ set ExecutionPath {
 
   ECALTiming_NeutralHadrons
 
+  TowerMerger
+  NeutralEFlowMerger
+  EFlowMergerAllTracks
+  EFlowMerger
+
+  LeptonFilterNoLep
+  LeptonFilterLep
+  RunPUPPIBase
+  RunPUPPI
+
+  NeutrinoFilter
+  MissingET
+  PuppiMissingET
+  GenMissingET
+  GenPileUpMissingET
+
+  GenJetFinder
+  FastJetFinder
+  FatJetFinder
+
+  JetEnergyScale
+
+  JetFlavorAssociation
+
   VertexFinderDAClusterizerZT
   HighMassVertexRecover
 
+  JetTiming
   GenParticleFilter
 
   TreeWriter
@@ -495,7 +520,8 @@ module EnergySmearing PhotonEnergySmearing {
   set OutputArray eflowPhotons
 
   # adding 1% extra photon smearing
-  set ResolutionFormula {energy*0.01}
+  #set ResolutionFormula {energy*0.01}
+  set ResolutionFormula {energy*0.00}
 
 }
 
@@ -543,6 +569,269 @@ module TimeSmearing ECALTiming_NeutralHadrons {
   set TimeResolution 3.0E-11
 }
 
+###################################################
+# Tower Merger (in case not using e-flow algorithm)
+###################################################
+
+module Merger TowerMerger {
+  # add InputArray InputArray
+  add InputArray ECal/ecalTowers
+  add InputArray HCal/hcalTowers
+  set OutputArray towers
+}
+
+
+####################
+# Neutral eflow erger
+####################
+
+module Merger NeutralEFlowMerger {
+  # add InputArray InputArray
+  add InputArray PhotonEnergySmearing/eflowPhotons
+  add InputArray HCal/eflowNeutralHadrons
+  set OutputArray eflowTowers
+}
+
+
+####################
+# Energy flow merger
+####################
+
+module Merger EFlowMerger {
+  # add InputArray InputArray
+  add InputArray HCal/eflowTracks
+  add InputArray PhotonEnergySmearing/eflowPhotons
+  add InputArray HCal/eflowNeutralHadrons
+  set OutputArray eflow
+}
+
+##################################
+# Energy flow merger (all tracks)
+##################################
+
+module Merger EFlowMergerAllTracks {
+  add InputArray TrackMerger/tracks
+  add InputArray PhotonEnergySmearing/eflowPhotons
+  add InputArray HCal/eflowNeutralHadrons
+  set OutputArray eflow
+}
+
+#########################################
+### Run the puppi code (to be tuned) ###
+#########################################
+
+module PdgCodeFilter LeptonFilterNoLep {
+  set InputArray HCal/eflowTracks
+  set OutputArray eflowTracksNoLeptons
+  set Invert false
+  add PdgCode {13}
+  add PdgCode {-13}
+  add PdgCode {11}
+  add PdgCode {-11}
+}
+
+module PdgCodeFilter LeptonFilterLep {
+  set InputArray HCal/eflowTracks
+  set OutputArray eflowTracksLeptons
+  set Invert true
+  add PdgCode {11}
+  add PdgCode {-11}
+  add PdgCode {13}
+  add PdgCode {-13}
+}
+
+module RunPUPPI RunPUPPIBase {
+  ## input information
+  set TrackInputArray   LeptonFilterNoLep/eflowTracksNoLeptons
+  set NeutralInputArray NeutralEFlowMerger/eflowTowers
+  set PVInputArray      PileUpMerger/vertices
+  set MinPuppiWeight    0.05
+  set UseExp            false
+  set UseNoLep          false
+
+  ## define puppi algorithm parameters (more than one for the same eta region is possible)
+  add EtaMinBin           0.0   1.5   4.0
+  add EtaMaxBin           1.5   4.0   10.0
+  add PtMinBin            0.0   0.0   0.0
+  add ConeSizeBin         0.2   0.2   0.2
+  add RMSPtMinBin         0.1   0.5   0.5
+  add RMSScaleFactorBin   1.0   1.0   1.0
+  add NeutralMinEBin      0.2   0.2   0.5
+  add NeutralPtSlope      0.006 0.013 0.067
+  add ApplyCHS            true  true  true
+  add UseCharged          true  true  false
+  add ApplyLowPUCorr      true  true  true
+  add MetricId            5     5     5
+  add CombId              0     0     0
+
+  ## output name
+  set OutputArray         PuppiParticles
+  set OutputArrayTracks   puppiTracks
+  set OutputArrayNeutrals puppiNeutrals
+}
+
+module Merger RunPUPPI {
+  add InputArray RunPUPPIBase/PuppiParticles
+  add InputArray LeptonFilterLep/eflowTracksLeptons
+  set OutputArray PuppiParticles
+}
+
+###################
+# Missing ET merger
+###################
+
+module Merger MissingET {
+  add InputArray EFlowMerger/eflow
+  set MomentumOutputArray momentum
+}
+
+module Merger PuppiMissingET {
+  #add InputArray InputArray
+  add InputArray RunPUPPI/PuppiParticles
+  #add InputArray EFlowMerger/eflow
+  set MomentumOutputArray momentum
+}
+
+###################
+# Ger PileUp Missing ET
+###################
+
+module Merger GenPileUpMissingET {
+  add InputArray ParticlePropagator/stableParticles
+  set MomentumOutputArray momentum
+}
+
+#################
+# Neutrino Filter
+#################
+
+module PdgCodeFilter NeutrinoFilter {
+
+  set InputArray Delphes/stableParticles
+  set OutputArray filteredParticles
+
+  set PTMin 0.0
+
+  add PdgCode {12}
+  add PdgCode {14}
+  add PdgCode {16}
+  add PdgCode {-12}
+  add PdgCode {-14}
+  add PdgCode {-16}
+
+}
+
+#####################
+# MC truth jet finder
+#####################
+
+module FastJetFinder GenJetFinder {
+  set InputArray NeutrinoFilter/filteredParticles
+
+  set OutputArray jets
+
+  # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
+  set JetAlgorithm 6
+  set ParameterR 0.4
+
+  set JetPTMin 15.0
+}
+
+#########################
+# Gen Missing ET merger
+########################
+
+module Merger GenMissingET {
+
+  add InputArray NeutrinoFilter/filteredParticles
+  set MomentumOutputArray momentum
+}
+
+
+
+############
+# Jet finder
+############
+
+module FastJetFinder FastJetFinder {
+  set InputArray RunPUPPI/PuppiParticles
+
+  set OutputArray jets
+
+  # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
+  set JetAlgorithm 6
+  set ParameterR 0.4
+
+  set JetPTMin 15.0
+}
+
+
+
+############
+# Jet finder
+############
+
+module FastJetFinder FatJetFinder {
+  #  set InputArray TowerMerger/towers
+  set InputArray RunPUPPI/PuppiParticles
+
+  set OutputArray jets
+
+  set JetAlgorithm 5
+  set ParameterR 0.8
+
+  set ComputeNsubjettiness 1
+  set Beta 1.0
+  set AxisMode 4
+
+  set ComputeTrimming 1
+  set RTrim 0.2
+  set PtFracTrim 0.05
+
+  set ComputePruning 1
+  set ZcutPrun 0.1
+  set RcutPrun 0.5
+  set RPrun 0.8
+
+  set ComputeSoftDrop 1
+  set BetaSoftDrop 0.0
+  set SymmetryCutSoftDrop 0.1
+  set R0SoftDrop 0.8
+
+  set JetPTMin 200.0
+}
+
+
+##################
+# Jet Energy Scale
+##################
+
+module EnergyScale JetEnergyScale {
+  set InputArray FastJetFinder/jets
+  set OutputArray jets
+
+ # scale formula for jets
+  set ScaleFormula {1.00}
+}
+
+
+
+########################
+# Jet Flavor Association
+########################
+
+module JetFlavorAssociation JetFlavorAssociation {
+
+  set PartonInputArray Delphes/partons
+  set ParticleInputArray Delphes/allParticles
+  set ParticleLHEFInputArray Delphes/allParticlesLHEF
+  set JetInputArray JetEnergyScale/jets
+
+  set DeltaR 0.5
+  set PartonPTMin 10.0
+  set PartonEtaMax 4.0
+
+}
 
 ##################################
 # Primary vertex clustering
@@ -592,6 +881,24 @@ module StatusPidFilter GenParticleFilter {
 
 }
 
+##################################
+# Jet Timing Module
+##################################
+
+module JetTimingModule JetTiming {
+  set InputArray JetEnergyScale/jets
+  set VertexArray HighMassVertexRecover/vertices
+
+  set OutputArray jets
+
+  set Verbose 0
+
+  # [mm]
+  set DzCutOff 40
+  # in d0/sigma_d0
+  set D0CutOff 1
+}
+
 ##################
 # ROOT tree writer
 ##################
@@ -602,12 +909,20 @@ module TreeWriter TreeWriter {
   # add Branch PileUpMerger/stableParticles Particle GenParticle
   add Branch GenParticleFilter/filteredParticles Particle GenParticle
 
+  #add Branch GenJetFinder/jets GenJet Jet
+  add Branch GenMissingET/momentum GenMissingET MissingET
+
   add Branch HighMassVertexRecover/tracks Track Track
   add Branch ECALTiming_photons/photons Photon Photon
    add Branch ECALTiming_NeutralHadrons/eflowNeutralHadrons EFlowNeutralHadron Tower
 
   add Branch HighMassVertexRecover/vertices Vertex4D Vertex
   add Branch PileUpMerger/vertices GenVertex Vertex
+
+  add Branch JetTiming/jets Jet Jet
+  add Branch MissingET/momentum MissingET MissingET
+  add Branch PuppiMissingET/momentum PuppiMissingET MissingET
+  add Branch GenPileUpMissingET/momentum GenPileUpMissingET MissingET
 
 
 }

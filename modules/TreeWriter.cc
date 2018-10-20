@@ -272,7 +272,6 @@ void TreeWriter::ProcessVertices(ExRootTreeBranch *branch, TObjArray *array)
     entry->ErrorZ = candidate->PositionError.Z ();;
     entry->ErrorT = candidate->PositionError.T() *1.0E-3/c_light;;
 
-
     TIter itConstituents(candidate->GetCandidates());
     itConstituents.Reset();
     entry->Constituents.Clear();
@@ -625,6 +624,8 @@ void TreeWriter::ProcessJets(ExRootTreeBranch *branch, TObjArray *array)
     entry->PT = pt;
 
     entry->T = position.T()*1.0E-3/c_light;
+    entry->PhotonTime = ((Jet*)candidate)->PhotonTime;
+    entry->ChargedParticleTime = ((Jet*)candidate)->ChargedParticleTime;
 
     entry->Mass = momentum.M();
 
@@ -650,13 +651,7 @@ void TreeWriter::ProcessJets(ExRootTreeBranch *branch, TObjArray *array)
     entry->Constituents.Clear();
     ecalEnergy = 0.0;
     hcalEnergy = 0.0;
-    while((constituent = static_cast<Candidate*>(itConstituents.Next())))
-    {
-      entry->Constituents.Add(constituent);
-      ecalEnergy += constituent->Eem;
-      hcalEnergy += constituent->Ehad;
-    }
-
+ 
     entry->EhadOverEem = ecalEnergy > 0.0 ? hcalEnergy/ecalEnergy : 999.9;
 
     //---   Pile-Up Jet ID variables ----

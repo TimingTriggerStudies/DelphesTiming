@@ -444,8 +444,40 @@ void SimpleCalorimeter::FinalizeTower()
 
   pt = energy / TMath::CosH(eta);
 
-  fTower->Position.SetPtEtaPhiE(1.0, eta, phi, time);
+
+  //******************************************************
+  // Calcualtion for Position of Tower in X,Y,Z
+  //*******************************************************
+  const double m_To_mm = 1.0e3;
+  const double rho = 1.29; //in meters
+  const double HalfLength = 3.0; // in meters
+  const double barrelEndcapTransition = 1.58; //Equals -1 ln( tan( atan(rho/HalfLength)/2))
+  double x = 0;
+  double y = 0;
+  double z = 0;
+  double theta = 2 * atan( exp(-1*eta));
+  if (fabs(eta) < barrelEndcapTransition) {
+    x = rho * cos(phi) * m_To_mm;
+    y = rho * sin(phi) * m_To_mm;
+    z = rho / tan( theta ) * m_To_mm;;
+  } else {
+    z = HalfLength* m_To_mm; 
+    if (eta < 0) z = -1 * HalfLength* m_To_mm;
+    double tempRho = HalfLength * tan( theta );
+    x = tempRho * cos(phi) * m_To_mm;
+    y = tempRho * sin(phi) * m_To_mm;  
+  }
+  
+  fTower->Position.SetXYZT(x, y, z, time);
   fTower->Momentum.SetPtEtaPhiE(pt, eta, phi, energy);
+
+  // cout << "Tower Position : " 
+  //      << eta << " " << phi << " | " << theta * 180 / 3.14 << " | " 
+  //      << fTower->Position.X() << " "
+  //      << fTower->Position.Y() << " "
+  //      << fTower->Position.Z() << " "
+  //      << fTower->Position.T() << " "
+  //      << "\n";
 
   fTower->Eem = (!fIsEcal) ? 0 : energy;
   fTower->Ehad = (fIsEcal) ? 0 : energy;

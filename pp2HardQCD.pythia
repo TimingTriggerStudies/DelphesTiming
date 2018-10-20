@@ -2,7 +2,7 @@
 ! Lines not beginning with a letter or digit are comments.
 
 ! 1) Settings parameters used in a main program
-Main:numberOfEvents = 10             ! number of events to generate
+Main:numberOfEvents = 20            ! number of events to generate
 Main:timesAllowErrors = 300           ! max number of allowed errors
 Random:setSeed = on                 ! activate manual seed setting
 Random:seed = 0                     ! Random seed dependent on the time

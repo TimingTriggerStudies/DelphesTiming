@@ -382,7 +382,8 @@ tmp/modules/ModulesDict.$(SrcSuf): \
 	modules/VertexFinderDAClusterizerZT.h \
 	modules/HighMassVertexRecover.h \
 	modules/CandidateFilter.h \
-	modules/ExampleModule.h
+	modules/ExampleModule.h \
+	modules/JetTimingModule.h
 tmp/modules/ModulesDict$(PcmSuf): \
 	tmp/modules/ModulesDict.$(SrcSuf)
 ModulesDict$(PcmSuf): \
@@ -684,6 +685,15 @@ tmp/modules/EnergySmearing.$(ObjSuf): \
 tmp/modules/ExampleModule.$(ObjSuf): \
 	modules/ExampleModule.$(SrcSuf) \
 	modules/ExampleModule.h \
+	classes/DelphesClasses.h \
+	classes/DelphesFactory.h \
+	classes/DelphesFormula.h \
+	external/ExRootAnalysis/ExRootResult.h \
+	external/ExRootAnalysis/ExRootFilter.h \
+	external/ExRootAnalysis/ExRootClassifier.h
+tmp/modules/JetTimingModule.$(ObjSuf): \
+	modules/JetTimingModule.$(SrcSuf) \
+	modules/JetTimingModule.h \
 	classes/DelphesClasses.h \
 	classes/DelphesFactory.h \
 	classes/DelphesFormula.h \
@@ -1062,6 +1072,7 @@ DELPHES_OBJ +=  \
 	tmp/modules/EnergyScale.$(ObjSuf) \
 	tmp/modules/EnergySmearing.$(ObjSuf) \
 	tmp/modules/ExampleModule.$(ObjSuf) \
+	tmp/modules/JetTimingModule.$(ObjSuf) \
 	tmp/modules/Hector.$(ObjSuf) \
 	tmp/modules/HighMassVertexRecover.$(ObjSuf) \
 	tmp/modules/IdentificationMap.$(ObjSuf) \
@@ -1781,6 +1792,10 @@ modules/IdentificationMap.h: \
 	@touch $@
 
 modules/ExampleModule.h: \
+	classes/DelphesModule.h
+	@touch $@
+
+modules/JetTimingModule.h: \
 	classes/DelphesModule.h
 	@touch $@
 

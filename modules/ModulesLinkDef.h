@@ -72,6 +72,7 @@
 #include "modules/HighMassVertexRecover.h"
 #include "modules/CandidateFilter.h"
 #include "modules/ExampleModule.h"
+#include "modules/JetTimingModule.h"
 
 #ifdef __CINT__
 
@@ -126,5 +127,6 @@
 #pragma link C++ class HighMassVertexRecover+;
 #pragma link C++ class CandidateFilter+;
 #pragma link C++ class ExampleModule+;
+#pragma link C++ class JetTimingModule+;
 
 #endif

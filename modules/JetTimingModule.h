@@ -16,32 +16,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ParticlePropagator_h
-#define ParticlePropagator_h
+#ifndef JetTimingModule_h
+#define JetTimingModule_h
 
-/** \class ParticlePropagator
+/** \class JetTimingModule
  *
- *  Propagates charged and neutral particles
- *  from a given vertex to a cylinder defined by its radius,
- *  its half-length, centered at (0,0,0) and with its axis
- *  oriented along the z-axis.
+ *  Selects candidates from the InputArray according to the efficiency formula.
  *
- *  \author P. Demin - UCL, Louvain-la-Neuve
+ *  \author S. Xie - California Institute of Technology
  *
  */
 
 #include "classes/DelphesModule.h"
 
-class TClonesArray;
-class TIterator;
-class TLorentzVector;
+#include <deque>
 
-class ParticlePropagator: public DelphesModule
+class TObjArray;
+class DelphesFormula;
+
+class JetTimingModule: public DelphesModule
 {
 public:
 
-  ParticlePropagator();
-  ~ParticlePropagator();
+  JetTimingModule();
+  ~JetTimingModule();
 
   void Init();
   void Process();
@@ -49,22 +47,22 @@ public:
 
 private:
 
-  Double_t fRadius, fHalfLength, fHalfLengthMax;
-  Double_t fBz;
+  Int_t fIntParam;
+  Double_t fDoubleParam;
+  
+  std::deque <Double_t> fArrayParam;
+  
+  DelphesFormula *fFormula; //!
 
   TIterator *fItInputArray; //!
+  TIterator *fItVertexArray; //!
 
   const TObjArray *fInputArray; //!
-  const TObjArray *fBeamSpotInputArray; //!
+  const TObjArray *fVertexArray; //!
 
   TObjArray *fOutputArray; //!
-  TObjArray *fChargedHadronOutputArray; //!
-  TObjArray *fElectronOutputArray; //!
-  TObjArray *fMuonOutputArray; //!
 
-  Int_t fVerbose;
-
-  ClassDef(ParticlePropagator, 1)
+  ClassDef(JetTimingModule, 1)
 };
 
 #endif

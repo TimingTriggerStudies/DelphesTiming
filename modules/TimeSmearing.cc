@@ -72,6 +72,12 @@ void TimeSmearing::Init()
 
   fTimeResolution = GetDouble("TimeResolution", 3.0E-11);
   fEtaMax = GetDouble("EtaMax", 9999.);
+
+  //For ECAL time resolution, use this reference
+  //https://doi.org/10.1088/1748-0221/12/03/C03018
+
+
+
   // import input array
 
   fInputArray = ImportArray(GetString("InputArray", "MuonMomentumSmearing/muons"));

@@ -361,6 +361,8 @@ public:
   Float_t Phi; // jet azimuthal angle
 
   Float_t T; //particle arrival time of flight
+  Float_t PhotonTime; //jet creation time using photons
+  Float_t ChargedParticleTime; //jet creation time using charged particles
 
   Float_t Mass; // jet invariant mass
 
